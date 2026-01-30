@@ -1,0 +1,354 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Gift Points Genetics Game</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<style>
+/* ===== DESIGN THEME - LOGIC UNTOUCHED ===== */
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;800&display=swap');
+
+body { 
+  margin:0; 
+  font-family: 'Poppins', sans-serif; 
+  background-color: #ff9a9e;
+  background-image: 
+    linear-gradient(135deg, #ff9a9e 0%, #fecfef 20%, #feada6 40%, #a1887f 60%, #a1c4fd 80%, #c2e9fb 100%);
+  background-size: 400% 400%;
+  animation: gradientBG 15s ease infinite;
+  min-height:100vh;
+}
+
+@keyframes gradientBG {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+.decor { position: fixed; font-size: 50px; opacity: 0.4; z-index: 1; pointer-events: none; animation: floatAnim 6s infinite ease-in-out; }
+@keyframes floatAnim { 0%, 100% { transform: translateY(0) rotate(0); } 50% { transform: translateY(-40px) rotate(20deg); } }
+
+header {
+  background: linear-gradient(90deg, #ff512f, #f09819); 
+  color:white; padding:40px 25px; text-align:center;
+  border-bottom: 10px solid #ffb703;
+}
+
+main { max-width:1100px; margin:auto; padding:30px 20px; position: relative; z-index: 5; }
+
+h2 { text-align:center; margin:40px 0 20px; color: #fff; text-shadow: 3px 3px 0px #ff6f61; font-weight: 900; text-transform: uppercase; }
+
+.characters, .merge-area { display:grid; grid-template-columns:repeat(auto-fit,minmax(140px,1fr)); gap:25px; }
+
+.card {
+  border-radius:30px; padding:25px 15px; text-align:center; cursor:pointer; color:white; font-weight:800; 
+  border: 6px solid rgba(255,255,255,0.4);
+  box-shadow: 0 10px 0 rgba(0,0,0,0.2);
+  transition: all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+/* Logic for greying out unavailable partners */
+.card.disabled {
+  opacity: 0.3;
+  filter: grayscale(1);
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+.card.selected {
+  border-color: #ffb703;
+  box-shadow: 0 0 30px #ffb703, 0 10px 0 #b38600;
+  transform: scale(1.08);
+}
+
+#statusMessage {
+  text-align: center; font-weight: 800; color: #fff; background: rgba(0,0,0,0.3);
+  padding: 10px; border-radius: 50px; max-width: 450px; margin: 10px auto; display: none;
+}
+
+.char-img { 
+    width:110px; height:110px; display:block; margin:0 auto 15px; 
+    object-fit:contain; border-radius:50%; background:white; padding:8px;
+    border: 4px solid #ffb703;
+}
+
+.mickey { background: linear-gradient(135deg, #2c3e50, #000000); }
+.minnie { background: linear-gradient(135deg, #ff758c, #ff7eb3); }
+.sponge { background: linear-gradient(135deg, #f1c40f, #f39c12); color:#111; }
+.pika { background: linear-gradient(135deg, #ffe259, #ffa751); color:#111; }
+.stitch { background: linear-gradient(135deg, #2193b0, #6dd5ed); }
+.melody { background: linear-gradient(135deg, #ff9a9e, #fecfef); color: #d62828; }
+.kuromi { background: linear-gradient(135deg, #4b0082, #000000); }
+
+.punnett {
+  display:none; 
+  background: rgba(255, 255, 255, 0.98); 
+  border-radius:40px; 
+  padding:20px;
+  width: 95%; 
+  max-width:650px; 
+  margin:40px auto; 
+  text-align:center; 
+  box-shadow:0 25px 0 #d65a50; 
+  border: 12px solid #ff6f61;
+  box-sizing: border-box; 
+  overflow-x: hidden; 
+}
+
+.tutorial-steps { background: #f0f7ff; border: 3px dashed #4361ee; border-radius: 20px; padding: 20px; margin: 15px 0; text-align: left; font-size: 0.9rem; }
+.ratio-note { background: #fff8e1; border-left: 8px solid #ffb703; padding: 12px; margin-top: 10px; font-weight: 600; }
+
+.punnett-table-container { overflow-x: auto; width: 100%; }
+
+.punnett-table { 
+  margin:15px auto; 
+  border-collapse:separate; 
+  border-spacing: 5px; 
+  font-size:1.2rem; 
+  width: 100%; 
+  max-width: 400px; 
+}
+
+.punnett-table td, .punnett-table th { 
+  border:4px solid #ffb703; 
+  padding:12px; 
+  text-align:center; 
+  min-width:50px; 
+  background: white; 
+  border-radius: 15px; 
+  font-weight: 800; 
+}
+
+button {
+  padding:15px 30px; border-radius:50px; border:none; background:linear-gradient(to bottom, #4cc9f0, #4361ee); 
+  color:white; font-size:1.1rem; font-weight:900; cursor:pointer; margin-top:10px; box-shadow: 0 8px 0 #3f37c9;
+}
+
+#resetBtn { background:linear-gradient(90deg, #6b7280, #374151); box-shadow: 0 8px 0 #232b38; }
+#exitBtn { background: linear-gradient(90deg, #ff0055, #d62828); box-shadow: 0 8px 0 #9b1c23; }
+
+.score {
+  text-align:center; font-size:1.5rem; background:white; padding:20px; border-radius:60px; 
+  max-width:400px; margin:40px auto; font-weight: 900; border: 8px solid #ffb703;
+}
+
+#tutorialOverlay, #finalOverlay { position:fixed; inset:0; background:rgba(0,0,0,0.85); display:flex; justify-content:center; align-items:center; z-index:9999; padding: 10px; }
+#finalOverlay { display:none; z-index:10000; }
+
+.overlay-content { background:white; padding:30px; border-radius:40px; max-width:500px; text-align:center; border: 10px solid #ffb703; }
+
+.disclaimer { font-size: 0.8rem; color: #d62828; font-weight: 800; background: #ffe3e3; padding: 10px; border-radius: 15px; border: 2px solid #ffbaba; margin-top: 15px; }
+
+.baby-note { font-weight: 800; color: #ff512f; margin-top: 15px; font-size: 0.9rem; border-top: 2px solid #eee; padding-top: 10px; }
+
+@media (max-width: 600px) {
+  .char-img { width: 80px; height: 80px; }
+  .card { padding: 15px 10px; }
+  h1 { font-size: 1.4rem; }
+  .punnett { padding: 15px; border-width: 8px; }
+  .punnett-table { font-size: 1rem; }
+}
+</style>
+</head>
+<body>
+
+<div class="decor" style="top:15%; left:5%;">🧬</div>
+<div class="decor" style="bottom:15%; right:5%;">🪜</div>
+
+<div id="tutorialOverlay">
+  <div class="overlay-content">
+    <div style="font-size: 50px;">🎓</div>
+    <h1 style="color: #ff512f;">How to Play</h1>
+    <p style="text-align:left; font-weight: 600; font-size: 0.9rem;">
+      1️⃣ Select a <b>Main Character</b>.<br>
+      2️⃣ Choose a <b>Partner</b> to merge with.<br>
+      3️⃣ Study the <b>Punnett Square</b> tutorial inside.<br>
+      4️⃣ Calculate points using the genotypic ratio.<br>
+      5️⃣ Click <b>Claim</b> to earn Gift Points!
+    </p>
+    <div class="disclaimer">📢 Illustration Only: Characters are actors for this lesson to show allele combinations regardless of biology!</div>
+    <button onclick="closeTutorial()">Start Mission ▶️</button>
+  </div>
+</div>
+
+<div id="finalOverlay">
+  <div class="overlay-content">
+    <div style="font-size: 60px;">🏆</div>
+    <h1 style="color:#ff512f;">🎉 Points Secured!</h1>
+    <p style="font-size:1.4rem; font-weight: 900;">You earned <strong id="finalPointsDisplay" style="color: #4361ee;">0</strong> Gift Points.</p>
+    <p style="font-weight: 800; color: #333; background: #fff3cd; padding: 10px; border-radius: 10px; font-size: 0.9rem;">Return to the Board Game and WRITE IT DOWN in the Scoring Board! 📝</p>
+    <button id="exitBtn" onclick="window.close();">EXIT MISSION 🚪</button>
+  </div>
+</div>
+
+<header>
+  <h1>🎁 Gift Points: Genetics Game</h1>
+  <p>Learn genotypic ratios through character illustration</p>
+</header>
+
+<main>
+<h2>Main Characters</h2>
+<div id="statusMessage">✨ Selected! Now choose a partner below.</div>
+
+<div class="characters">
+  <div id="card-Mickey" class="card mickey" onclick="selectBase('Mickey Mouse')">
+    <img class="char-img" src="mickey.png">
+    Mickey Mouse
+  </div>
+  <div id="card-Minnie" class="card minnie" onclick="selectBase('Minnie Mouse')">
+    <img class="char-img" src="miney.png">
+    Minnie Mouse
+  </div>
+</div>
+
+<h2>Merge With</h2>
+<div class="merge-area">
+  <div id="partner-SpongeBob" class="card sponge" onclick="mergeWith('SpongeBob')">
+    <img class="char-img" src="SpongeBob.png">
+    SpongeBob
+  </div>
+  <div id="partner-Pikachu" class="card pika" onclick="mergeWith('Pikachu')">
+    <img class="char-img" src="pika.png">
+    Pikachu
+  </div>
+  <div id="partner-Stitch" class="card stitch" onclick="mergeWith('Stitch')">
+    <img class="char-img" src="stitch.png">
+    Stitch
+  </div>
+  <div id="partner-Melody" class="card melody" onclick="mergeWith('My Melody')">
+    <img class="char-img" src="melody.png">
+    My Melody
+  </div>
+  <div id="partner-Kuromi" class="card kuromi" onclick="mergeWith('Kuromi')">
+    <img class="char-img" src="kuromi.png">
+    Kuromi
+  </div>
+</div>
+
+<div class="punnett" id="punnettBox">
+  <h2 style="color: #4361ee; font-size: 1.1rem; margin-bottom: 5px;">TUTORIAL: HOW TO INTERPRET PUNNETT SQUARE 📝</h2>
+  
+  <div class="tutorial-steps">
+    <b>Quick Guide:</b>
+    <div class="ratio-note">
+      💡 <b>Understanding the Ratio:</b><br>
+      Example: <b>1 AA : 2 Aa : 1 aa</b><br>
+      It means <b>AA</b> appeared once (1), <b>Aa</b> twice (2), and <b>aa</b> once (1).
+    </div>
+    <div class="disclaimer" style="margin-top:10px; font-size:0.75rem;">📢 Illustration Only: This merge shows genetic concepts only!</div>
+  </div>
+
+  <h3 id="mergeTitle" style="color: #ff6f61; font-size: 1.2rem;"></h3>
+  <div style="background: #ffb703; color: white; display: inline-block; padding: 5px 20px; border-radius: 50px; font-weight: 800; font-size: 0.9rem;">
+    Genotypic Ratio: <span id="genotypeRatio"></span>
+  </div>
+
+  <div class="punnett-table-container">
+    <table class="punnett-table">
+      <tr><th></th><th id="allele1"></th><th id="allele2"></th></tr>
+      <tr><th id="sideAllele1"></th><td id="cell1"></td><td id="cell2"></td></tr>
+      <tr><th id="sideAllele2"></th><td id="cell3"></td><td id="cell4"></td></tr>
+    </table>
+  </div>
+
+  <div class="baby-note">
+    ✨ If you want to see the image of their possible offsprings, just go to the baby box!
+  </div>
+  
+  <div style="display: flex; gap: 10px; justify-content: center; flex-wrap: wrap;">
+    <button id="claimBtn">Claim Gift Points 🎁</button>
+    <button id="resetBtn">Reset 🔄</button>
+  </div>
+</div>
+
+<div class="score">
+  ⭐ Total Gift Points: <span id="score">0</span>
+</div>
+</main>
+
+<script>
+let baseCharacter = '';
+let poolPoints = 0;
+let gameClaimed = false;
+
+// Updated Merges: Mickey gets the old results from Pika/Stitch/Sponge
+const merges = {
+  // Mickey logic (Only Girls)
+  "Mickey Mouse|Kuromi": { alleles:['A','a'], cells:['AA','Aa','Aa','aa'], ratio:[1,2,1] },
+  "Mickey Mouse|My Melody": { alleles:['D','d'], cells:['DD','Dd','Dd','dd'], ratio:[1,2,1] },
+  
+  // Minnie logic (Only Boys)
+  "Minnie Mouse|Pikachu": { alleles:['F','f'], cells:['FF','Ff','Ff','ff'], ratio:[1,2,1] },
+  "Minnie Mouse|Stitch": { alleles:['B','b'], cells:['BB','Bb','Bb','bb'], ratio:[1,2,1] },
+  "Minnie Mouse|SpongeBob": { alleles:['G','g'], cells:['GG','Gg','Gg','gg'], ratio:[1,2,1] }
+};
+
+function closeTutorial() { document.getElementById('tutorialOverlay').style.display='none'; }
+
+function selectBase(name) { 
+  if(gameClaimed) return alert("Gift already claimed."); 
+  baseCharacter = name; 
+  document.getElementById('card-Mickey').classList.remove('selected');
+  document.getElementById('card-Minnie').classList.remove('selected');
+  const selectedId = name === 'Mickey Mouse' ? 'card-Mickey' : 'card-Minnie';
+  document.getElementById(selectedId).classList.add('selected');
+  
+  const status = document.getElementById('statusMessage');
+  status.style.display = 'block';
+  status.innerText = "✨ " + name + " Selected! Now choose a partner.";
+
+  // Guide logic: Enable/Disable partners based on selection
+  const partners = ['SpongeBob', 'Pikachu', 'Stitch', 'Melody', 'Kuromi'];
+  partners.forEach(p => {
+    const card = document.getElementById('partner-' + p.replace('My ', ''));
+    const isValid = merges[name + "|" + (p === 'Melody' ? 'My Melody' : p)];
+    if(isValid) {
+      card.classList.remove('disabled');
+    } else {
+      card.classList.add('disabled');
+    }
+  });
+}
+
+function mergeWith(partner) {
+  if(!baseCharacter || gameClaimed) { alert("Select Mickey or Minnie first!"); return; }
+  const data = merges[baseCharacter + "|" + partner]; 
+  
+  if(!data) {
+     const msg = baseCharacter === 'Mickey Mouse' ? "Mickey can only merge with My Melody or Kuromi!" : "Minnie can only merge with SpongeBob, Pikachu, or Stitch!";
+     alert(msg);
+     return;
+  }
+
+  poolPoints = data.ratio.reduce((a,b)=>a+b,0);
+  document.getElementById('mergeTitle').innerText = baseCharacter + " × " + partner;
+  document.getElementById('genotypeRatio').innerText = data.ratio.join(':');
+  ['allele1','allele2','sideAllele1','sideAllele2'].forEach((id,i)=>document.getElementById(id).innerText=data.alleles[i%2]);
+  ['cell1','cell2','cell3','cell4'].forEach((id,i)=>document.getElementById(id).innerText=data.cells[i]);
+  document.getElementById('punnettBox').style.display='block';
+  window.scrollTo({ top: document.getElementById('punnettBox').offsetTop - 20, behavior: 'smooth' });
+}
+
+document.getElementById('claimBtn').onclick = () => {
+  if(gameClaimed) return;
+  gameClaimed=true;
+  document.getElementById('score').innerText=poolPoints;
+  document.getElementById('finalPointsDisplay').innerText=poolPoints;
+  document.getElementById('finalOverlay').style.display='flex';
+};
+
+document.getElementById('resetBtn').onclick = () => {
+  baseCharacter=''; poolPoints=0; gameClaimed=false;
+  document.getElementById('score').innerText='0';
+  document.getElementById('punnettBox').style.display='none';
+  document.getElementById('statusMessage').style.display = 'none';
+  document.getElementById('card-Mickey').classList.remove('selected');
+  document.getElementById('card-Minnie').classList.remove('selected');
+  // Re-enable all cards
+  const partners = ['SpongeBob', 'Pikachu', 'Stitch', 'Melody', 'Kuromi'];
+  partners.forEach(p => document.getElementById('partner-' + p.replace('My ', '')).classList.remove('disabled'));
+};
+</script>
+</body>
+</html>
